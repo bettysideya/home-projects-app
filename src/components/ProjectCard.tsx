@@ -7,6 +7,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { ChevronDown, ChevronRight, Trash2, Plus, CheckCircle2, Circle, GripVertical, Pencil } from 'lucide-react'
 import { Project } from '@/lib/supabase'
 import { deleteProject, updateProject, fetchTasks, createTask, toggleTask, deleteTask } from '@/lib/queries'
+import { ResourceLinker } from './ResourceLinker'
 
 interface Props {
   project: Project
@@ -197,6 +198,8 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
                   </div>
                 </div>
               )}
+
+              <ResourceLinker projectId={project.id} accentColor={accentColor} />
             </>
           )}
 

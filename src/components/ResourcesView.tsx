@@ -1,0 +1,284 @@
+'use client'
+
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Plus, Trash2, Pencil, X, Check } from 'lucide-react'
+import { Resource } from '@/lib/supabase'
+import { fetchResources, createResource, updateResource, deleteResource } from '@/lib/queries'
+
+const EMPTY: Omit<Resource, 'id' | 'created_at'> = {
+  name: '',
+  company: null,
+  mobile: null,
+  email: null,
+  notes: null,
+}
+
+function ResourceForm({
+  initial,
+  onSave,
+  onCancel,
+  saving,
+}: {
+  initial: Omit<Resource, 'id' | 'created_at'>
+  onSave: (v: Omit<Resource, 'id' | 'created_at'>) => void
+  onCancel: () => void
+  saving: boolean
+}) {
+  const [form, setForm] = useState(initial)
+  const set = (k: keyof typeof form, v: string) =>
+    setForm(prev => ({ ...prev, [k]: v || null }))
+
+  return (
+    <div
+      className="rounded-xl p-4 space-y-3"
+      style={{ background: '#1a1b2e', border: '1px solid #3d3e5a' }}
+    >
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs mb-1 block" style={{ color: '#8b8ca8' }}>Name *</label>
+          <input
+            autoFocus
+            value={form.name}
+            onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
+            className="w-full text-sm rounded-lg px-3 py-2 outline-none"
+            style={{ background: '#252640', color: '#e2e3f0', border: '1px solid #3d3e5a' }}
+            placeholder="Full name"
+          />
+        </div>
+        <div>
+          <label className="text-xs mb-1 block" style={{ color: '#8b8ca8' }}>Company</label>
+          <input
+            value={form.company ?? ''}
+            onChange={e => set('company', e.target.value)}
+            className="w-full text-sm rounded-lg px-3 py-2 outline-none"
+            style={{ background: '#252640', color: '#e2e3f0', border: '1px solid #3d3e5a' }}
+            placeholder="Company or trade"
+          />
+        </div>
+        <div>
+          <label className="text-xs mb-1 block" style={{ color: '#8b8ca8' }}>Mobile</label>
+          <input
+            value={form.mobile ?? ''}
+            onChange={e => set('mobile', e.target.value)}
+            className="w-full text-sm rounded-lg px-3 py-2 outline-none"
+            style={{ background: '#252640', color: '#e2e3f0', border: '1px solid #3d3e5a' }}
+            placeholder="Phone number"
+          />
+        </div>
+        <div>
+          <label className="text-xs mb-1 block" style={{ color: '#8b8ca8' }}>Email</label>
+          <input
+            value={form.email ?? ''}
+            onChange={e => set('email', e.target.value)}
+            className="w-full text-sm rounded-lg px-3 py-2 outline-none"
+            style={{ background: '#252640', color: '#e2e3f0', border: '1px solid #3d3e5a' }}
+            placeholder="Email address"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="text-xs mb-1 block" style={{ color: '#8b8ca8' }}>Notes</label>
+        <textarea
+          value={form.notes ?? ''}
+          onChange={e => set('notes', e.target.value)}
+          rows={2}
+          className="w-full text-sm rounded-lg px-3 py-2 outline-none resize-none"
+          style={{ background: '#252640', color: '#e2e3f0', border: '1px solid #3d3e5a' }}
+          placeholder="Notes, rates, specialties…"
+        />
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => form.name.trim() && onSave(form)}
+          disabled={!form.name.trim() || saving}
+          className="text-sm text-white px-4 py-1.5 rounded-lg font-medium disabled:opacity-50"
+          style={{ background: '#4f46e5' }}
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+        <button onClick={onCancel} className="text-sm" style={{ color: '#8b8ca8' }}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export function ResourcesView() {
+  const qc = useQueryClient()
+  const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+
+  const { data: resources = [], isLoading } = useQuery({
+    queryKey: ['resources'],
+    queryFn: fetchResources,
+  })
+
+  const createMutation = useMutation({
+    mutationFn: createResource,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['resources'] })
+      setAdding(false)
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Omit<Resource, 'id' | 'created_at'>> }) =>
+      updateResource(id, updates),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['resources'] })
+      setEditingId(null)
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteResource,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['resources'] }),
+  })
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold" style={{ color: '#e2e3f0' }}>Resources</h2>
+          <p className="text-xs mt-0.5" style={{ color: '#6b6c88' }}>
+            Contractors, vendors, and other contacts
+          </p>
+        </div>
+        {!adding && (
+          <button
+            onClick={() => setAdding(true)}
+            className="flex items-center gap-1.5 text-sm text-white px-3 py-1.5 rounded-lg font-medium"
+            style={{ background: '#4f46e5' }}
+          >
+            <Plus size={14} />
+            Add Resource
+          </button>
+        )}
+      </div>
+
+      {adding && (
+        <ResourceForm
+          initial={EMPTY}
+          onSave={v => createMutation.mutate(v)}
+          onCancel={() => setAdding(false)}
+          saving={createMutation.isPending}
+        />
+      )}
+
+      {resources.length === 0 && !adding ? (
+        <div
+          className="text-center py-16 rounded-2xl"
+          style={{ background: '#252640', border: '1px solid #2d2e4a' }}
+        >
+          <p className="text-sm" style={{ color: '#6b6c88' }}>No resources yet.</p>
+          <button
+            onClick={() => setAdding(true)}
+            className="text-sm mt-2 underline"
+            style={{ color: '#4f46e5' }}
+          >
+            Add your first contact
+          </button>
+        </div>
+      ) : (
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{ background: '#252640', border: '1px solid #2d2e4a' }}
+        >
+          <table className="w-full">
+            <thead>
+              <tr style={{ borderBottom: '1px solid #2d2e4a' }}>
+                {['Name', 'Company', 'Mobile', 'Email', ''].map(h => (
+                  <th
+                    key={h}
+                    className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider"
+                    style={{ color: '#6b6c88' }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {resources.map((r, i) => (
+                <>
+                  <tr
+                    key={r.id}
+                    className="group transition-colors"
+                    style={{
+                      borderBottom: i < resources.length - 1 ? '1px solid #2d2e4a' : 'none',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#2a2b48')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <td className="px-4 py-3 text-sm font-medium" style={{ color: '#e2e3f0' }}>
+                      {r.name}
+                    </td>
+                    <td className="px-4 py-3 text-sm" style={{ color: '#8b8ca8' }}>
+                      {r.company ?? '—'}
+                    </td>
+                    <td className="px-4 py-3 text-sm" style={{ color: '#8b8ca8' }}>
+                      {r.mobile ? (
+                        <a href={`tel:${r.mobile}`} style={{ color: '#8b8ca8' }}>
+                          {r.mobile}
+                        </a>
+                      ) : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-sm" style={{ color: '#8b8ca8' }}>
+                      {r.email ? (
+                        <a href={`mailto:${r.email}`} style={{ color: '#4f46e5' }}>
+                          {r.email}
+                        </a>
+                      ) : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity justify-end">
+                        <button
+                          onClick={() => setEditingId(r.id)}
+                          style={{ color: '#6b6c88' }}
+                          onMouseEnter={e => (e.currentTarget.style.color = '#4f46e5')}
+                          onMouseLeave={e => (e.currentTarget.style.color = '#6b6c88')}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => deleteMutation.mutate(r.id)}
+                          style={{ color: '#6b6c88' }}
+                          onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                          onMouseLeave={e => (e.currentTarget.style.color = '#6b6c88')}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  {editingId === r.id && (
+                    <tr key={`edit-${r.id}`} style={{ borderBottom: i < resources.length - 1 ? '1px solid #2d2e4a' : 'none' }}>
+                      <td colSpan={5} className="px-4 py-3">
+                        <ResourceForm
+                          initial={{ name: r.name, company: r.company, mobile: r.mobile, email: r.email, notes: r.notes }}
+                          onSave={v => updateMutation.mutate({ id: r.id, updates: v })}
+                          onCancel={() => setEditingId(null)}
+                          saving={updateMutation.isPending}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}

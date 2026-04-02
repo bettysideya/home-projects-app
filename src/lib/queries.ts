@@ -1,4 +1,4 @@
-import { supabase, Project, Task, Column } from './supabase'
+import { supabase, Project, Task, Column, Resource, ProjectResource } from './supabase'
 
 // Projects
 export async function fetchProjects(): Promise<Project[]> {
@@ -96,5 +96,81 @@ export async function toggleTask(id: string, completed: boolean): Promise<Task> 
 
 export async function deleteTask(id: string): Promise<void> {
   const { error } = await supabase.from('tasks').delete().eq('id', id)
+  if (error) throw error
+}
+
+// Resources
+export async function fetchResources(): Promise<Resource[]> {
+  const { data, error } = await supabase
+    .from('resources')
+    .select('*')
+    .order('name', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function createResource(
+  resource: Omit<Resource, 'id' | 'created_at'>
+): Promise<Resource> {
+  const { data, error } = await supabase
+    .from('resources')
+    .insert(resource)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateResource(
+  id: string,
+  updates: Partial<Omit<Resource, 'id' | 'created_at'>>
+): Promise<Resource> {
+  const { data, error } = await supabase
+    .from('resources')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteResource(id: string): Promise<void> {
+  const { error } = await supabase.from('resources').delete().eq('id', id)
+  if (error) throw error
+}
+
+// Project Resources (junction)
+export async function fetchProjectResources(projectId: string): Promise<ProjectResource[]> {
+  const { data, error } = await supabase
+    .from('project_resources')
+    .select('*, resource:resources(*)')
+    .eq('project_id', projectId)
+  if (error) throw error
+  return data ?? []
+}
+
+export async function linkResourceToProject(
+  projectId: string,
+  resourceId: string
+): Promise<ProjectResource> {
+  const { data, error } = await supabase
+    .from('project_resources')
+    .insert({ project_id: projectId, resource_id: resourceId })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function unlinkResourceFromProject(
+  projectId: string,
+  resourceId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('project_resources')
+    .delete()
+    .eq('project_id', projectId)
+    .eq('resource_id', resourceId)
   if (error) throw error
 }

@@ -35,9 +35,12 @@ export function KanbanBoard() {
   })
 
   const moveMutation = useMutation({
-    mutationFn: ({ id, column, position }: { id: string; column: Column; position: number }) =>
-      updateProject(id, { column, position }),
+    mutationFn: async ({ updates }: { updates: { id: string; column: Column; position: number }[] }) => {
+      // Fire all updates in parallel
+      await Promise.all(updates.map(u => updateProject(u.id, { column: u.column, position: u.position })))
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+    onError: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   })
 
   function handleDragStart(event: DragStartEvent) {
@@ -83,32 +86,56 @@ export function KanbanBoard() {
 
     const activeId = active.id as string
     const overId = over.id as string
-    const activeProj = projects.find(p => p.id === activeId)
+
+    // Get current snapshot from cache (handleDragOver already updated it optimistically)
+    const currentProjects: Project[] = qc.getQueryData(['projects']) ?? []
+    const activeProj = currentProjects.find(p => p.id === activeId)
     if (!activeProj) return
 
     const targetColumn = COLUMNS.includes(overId as Column)
       ? (overId as Column)
-      : (projects.find(p => p.id === overId)?.column ?? activeProj.column)
+      : (currentProjects.find(p => p.id === overId)?.column ?? activeProj.column)
 
-    const columnProjects = projects.filter(p => p.column === targetColumn)
+    // All projects in the target column after optimistic update
+    const columnProjects = currentProjects
+      .filter(p => p.column === targetColumn)
+      .sort((a, b) => a.position - b.position)
+
     const overIndex = columnProjects.findIndex(p => p.id === overId)
     const activeIndex = columnProjects.findIndex(p => p.id === activeId)
 
-    let newPosition = activeProj.position
+    let reordered = [...columnProjects]
     if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
-      const reordered = arrayMove(columnProjects, activeIndex, overIndex)
-      newPosition = overIndex
-      // Persist reordering
-      reordered.forEach((p, i) => {
-        if (p.id !== activeId) return
-        moveMutation.mutate({ id: activeId, column: targetColumn, position: i })
-      })
-      return
+      reordered = arrayMove(columnProjects, activeIndex, overIndex)
+    } else if (activeIndex === -1) {
+      // Card moved from another column — append at end or at overIndex
+      reordered = [...columnProjects.filter(p => p.id !== activeId)]
+      const insertAt = overIndex !== -1 ? overIndex : reordered.length
+      reordered.splice(insertAt, 0, activeProj)
     }
 
-    if (activeProj.column !== targetColumn) {
-      moveMutation.mutate({ id: activeId, column: targetColumn, position: newPosition })
+    // Assign positions 0..n
+    const updates = reordered.map((p, i) => ({
+      id: p.id,
+      column: targetColumn,
+      position: i,
+    }))
+
+    // Also include the active card in case column changed and it isn't in reordered yet
+    const hasActive = updates.some(u => u.id === activeId)
+    if (!hasActive) {
+      updates.push({ id: activeId, column: targetColumn, position: reordered.length })
     }
+
+    // Optimistically update local cache with new positions
+    qc.setQueryData(['projects'], (old: Project[] = []) =>
+      old.map(p => {
+        const u = updates.find(u => u.id === p.id)
+        return u ? { ...p, column: u.column, position: u.position } : p
+      })
+    )
+
+    moveMutation.mutate({ updates })
   }
 
   if (isLoading) {

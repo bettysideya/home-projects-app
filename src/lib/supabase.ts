@@ -17,6 +17,24 @@ export interface Project {
   updated_at: string
 }
 
+export interface Resource {
+  id: string
+  name: string
+  company: string | null
+  mobile: string | null
+  email: string | null
+  notes: string | null
+  created_at: string
+}
+
+export interface ProjectResource {
+  id: string
+  project_id: string
+  resource_id: string
+  created_at: string
+  resource?: Resource
+}
+
 export interface Task {
   id: string
   project_id: string
