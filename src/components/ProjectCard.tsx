@@ -10,9 +10,10 @@ import { deleteProject, updateProject, fetchTasks, createTask, toggleTask, delet
 
 interface Props {
   project: Project
+  accentColor?: string
 }
 
-export function ProjectCard({ project }: Props) {
+export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
   const qc = useQueryClient()
   const [expanded, setExpanded] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -28,7 +29,7 @@ export function ProjectCard({ project }: Props) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
   }
 
   const { data: tasks = [] } = useQuery({
@@ -76,14 +77,25 @@ export function ProjectCard({ project }: Props) {
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 group hover:shadow-md transition-shadow"
+      style={{
+        ...style,
+        background: '#1e1f38',
+        border: '1px solid #2d2e4a',
+        borderRadius: '12px',
+        padding: '14px',
+      }}
+      className="group transition-all hover:border-opacity-80"
+      onMouseEnter={e => (e.currentTarget.style.borderColor = '#3d3e5a')}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = '#2d2e4a')}
     >
       <div className="flex items-start gap-2">
         <button
           {...attributes}
           {...listeners}
-          className="mt-1 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none"
+          className="mt-1 cursor-grab active:cursor-grabbing touch-none"
+          style={{ color: '#3d3e5a' }}
+          onMouseEnter={e => (e.currentTarget.style.color = '#8b8ca8')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#3d3e5a')}
         >
           <GripVertical size={16} />
         </button>
@@ -95,7 +107,12 @@ export function ProjectCard({ project }: Props) {
                 autoFocus
                 value={editTitle}
                 onChange={e => setEditTitle(e.target.value)}
-                className="w-full text-sm font-semibold border-b border-blue-400 outline-none pb-1"
+                className="w-full text-sm font-semibold border-b outline-none pb-1"
+                style={{
+                  background: 'transparent',
+                  color: '#e2e3f0',
+                  borderColor: accentColor,
+                }}
                 onKeyDown={e => {
                   if (e.key === 'Enter') updateMutation.mutate({ title: editTitle, description: editDesc || null })
                   if (e.key === 'Escape') setEditing(false)
@@ -106,16 +123,22 @@ export function ProjectCard({ project }: Props) {
                 onChange={e => setEditDesc(e.target.value)}
                 placeholder="Description (optional)"
                 rows={2}
-                className="w-full text-xs border rounded p-1 outline-none resize-none"
+                className="w-full text-xs rounded p-1 outline-none resize-none"
+                style={{ background: '#252640', color: '#8b8ca8', border: '1px solid #2d2e4a' }}
               />
               <div className="flex gap-2">
                 <button
                   onClick={() => updateMutation.mutate({ title: editTitle, description: editDesc || null })}
-                  className="text-xs bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600"
+                  className="text-xs text-white px-3 py-1 rounded-lg"
+                  style={{ background: accentColor }}
                 >
                   Save
                 </button>
-                <button onClick={() => setEditing(false)} className="text-xs text-gray-500 hover:text-gray-700">
+                <button
+                  onClick={() => setEditing(false)}
+                  className="text-xs"
+                  style={{ color: '#8b8ca8' }}
+                >
                   Cancel
                 </button>
               </div>
@@ -125,38 +148,51 @@ export function ProjectCard({ project }: Props) {
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setExpanded(!expanded)}
-                  className="text-gray-400 hover:text-gray-600"
+                  style={{ color: '#8b8ca8' }}
                 >
                   {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 </button>
-                <h3 className="text-sm font-semibold text-gray-800 truncate flex-1">{project.title}</h3>
+                <h3 className="text-sm font-semibold truncate flex-1" style={{ color: '#e2e3f0' }}>
+                  {project.title}
+                </h3>
                 <button
                   onClick={() => setEditing(true)}
-                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-blue-500 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ color: '#8b8ca8' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = accentColor)}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#8b8ca8')}
                 >
                   <Pencil size={13} />
                 </button>
                 <button
                   onClick={() => deleteMutation.mutate()}
-                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ color: '#8b8ca8' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#8b8ca8')}
                 >
                   <Trash2 size={13} />
                 </button>
               </div>
 
               {project.description && (
-                <p className="text-xs text-gray-500 mt-1 ml-5 line-clamp-2">{project.description}</p>
+                <p className="text-xs mt-1 ml-5 line-clamp-2" style={{ color: '#6b6c88' }}>
+                  {project.description}
+                </p>
               )}
 
               {tasks.length > 0 && (
                 <div className="mt-1 ml-5">
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs" style={{ color: '#6b6c88' }}>
                     {completedCount}/{tasks.length} tasks
                   </span>
-                  <div className="h-1 bg-gray-100 rounded-full mt-1">
+                  <div className="h-1 rounded-full mt-1" style={{ background: '#2d2e4a' }}>
                     <div
-                      className="h-1 bg-green-400 rounded-full transition-all"
-                      style={{ width: `${tasks.length ? (completedCount / tasks.length) * 100 : 0}%` }}
+                      className="h-1 rounded-full transition-all"
+                      style={{
+                        width: `${tasks.length ? (completedCount / tasks.length) * 100 : 0}%`,
+                        background: accentColor,
+                      }}
                     />
                   </div>
                 </div>
@@ -170,20 +206,30 @@ export function ProjectCard({ project }: Props) {
                 <div key={task.id} className="flex items-center gap-2 group/task">
                   <button
                     onClick={() => toggleTaskMutation.mutate({ id: task.id, completed: !task.completed })}
-                    className="text-gray-400 hover:text-green-500 flex-shrink-0"
+                    className="flex-shrink-0"
+                    style={{ color: task.completed ? accentColor : '#6b6c88' }}
                   >
                     {task.completed ? (
-                      <CheckCircle2 size={14} className="text-green-500" />
+                      <CheckCircle2 size={14} />
                     ) : (
                       <Circle size={14} />
                     )}
                   </button>
-                  <span className={`text-xs flex-1 ${task.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                  <span
+                    className="text-xs flex-1"
+                    style={{
+                      color: task.completed ? '#4a4b6a' : '#c2c3d8',
+                      textDecoration: task.completed ? 'line-through' : 'none',
+                    }}
+                  >
                     {task.title}
                   </span>
                   <button
                     onClick={() => deleteTaskMutation.mutate(task.id)}
-                    className="opacity-0 group-hover/task:opacity-100 text-gray-300 hover:text-red-400"
+                    className="opacity-0 group-hover/task:opacity-100"
+                    style={{ color: '#3d3e5a' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                    onMouseLeave={e => (e.currentTarget.style.color = '#3d3e5a')}
                   >
                     <Trash2 size={11} />
                   </button>
@@ -197,7 +243,12 @@ export function ProjectCard({ project }: Props) {
                     value={newTaskTitle}
                     onChange={e => setNewTaskTitle(e.target.value)}
                     placeholder="Task name..."
-                    className="text-xs border-b border-blue-400 outline-none flex-1 pb-0.5"
+                    className="text-xs border-b outline-none flex-1 pb-0.5"
+                    style={{
+                      background: 'transparent',
+                      color: '#e2e3f0',
+                      borderColor: accentColor,
+                    }}
                     onKeyDown={e => {
                       if (e.key === 'Enter' && newTaskTitle.trim()) addTaskMutation.mutate()
                       if (e.key === 'Escape') setAddingTask(false)
@@ -205,7 +256,7 @@ export function ProjectCard({ project }: Props) {
                   />
                   <button
                     onClick={() => newTaskTitle.trim() && addTaskMutation.mutate()}
-                    className="text-blue-500 hover:text-blue-600"
+                    style={{ color: accentColor }}
                   >
                     <Plus size={13} />
                   </button>
@@ -213,7 +264,10 @@ export function ProjectCard({ project }: Props) {
               ) : (
                 <button
                   onClick={() => setAddingTask(true)}
-                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-500 mt-1"
+                  className="flex items-center gap-1 text-xs mt-1"
+                  style={{ color: '#6b6c88' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = accentColor)}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#6b6c88')}
                 >
                   <Plus size={12} /> Add task
                 </button>
