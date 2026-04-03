@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ChevronDown, ChevronRight, Trash2, Plus, CheckCircle2, Circle, GripVertical, Pencil } from 'lucide-react'
+import { ChevronDown, ChevronRight, Trash2, Plus, CheckCircle2, Circle, GripVertical, Pencil, CalendarDays } from 'lucide-react'
 import { Project } from '@/lib/supabase'
-import { deleteProject, updateProject, fetchTasks, createTask, toggleTask, deleteTask } from '@/lib/queries'
+import { deleteProject, updateProject, fetchTasks, createTask, toggleTask, deleteTask, updateTaskDueDate } from '@/lib/queries'
 import { ResourceLinker } from './ResourceLinker'
 import { TaskResourceLinker } from './TaskResourceLinker'
 
@@ -71,6 +71,12 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
 
   const deleteTaskMutation = useMutation({
     mutationFn: (id: string) => deleteTask(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks', project.id] }),
+  })
+
+  const dueDateMutation = useMutation({
+    mutationFn: ({ id, dueDate }: { id: string; dueDate: string | null }) =>
+      updateTaskDueDate(id, dueDate),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks', project.id] }),
   })
 
@@ -229,6 +235,34 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
                     {task.title}
                   </span>
                   <TaskResourceLinker taskId={task.id} accentColor={accentColor} />
+                  <div className="relative flex-shrink-0">
+                    <input
+                      type="date"
+                      value={task.due_date ?? ''}
+                      onChange={e => dueDateMutation.mutate({ id: task.id, dueDate: e.target.value || null })}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      style={{ zIndex: 1 }}
+                    />
+                    {task.due_date ? (
+                      <span
+                        className="text-xs cursor-pointer select-none"
+                        style={{ color: '#8b8ca8', fontSize: '10px' }}
+                        title={task.due_date}
+                      >
+                        {(() => {
+                          const [, m, d] = task.due_date.split('-')
+                          return `${parseInt(m)}/${parseInt(d)}`
+                        })()}
+                      </span>
+                    ) : (
+                      <span
+                        className="opacity-0 group-hover/task:opacity-100 transition-opacity cursor-pointer"
+                        style={{ color: '#3d3e5a' }}
+                      >
+                        <CalendarDays size={11} />
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={() => deleteTaskMutation.mutate(task.id)}
                     className="opacity-0 group-hover/task:opacity-100"

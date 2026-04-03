@@ -50,5 +50,6 @@ export interface Task {
   description: string | null
   completed: boolean
   position: number
+  due_date: string | null
   created_at: string
 }
