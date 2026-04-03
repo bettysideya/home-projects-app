@@ -99,6 +99,17 @@ export async function deleteTask(id: string): Promise<void> {
   if (error) throw error
 }
 
+export async function updateProjectDueDate(projectId: string, dueDate: string | null): Promise<Project> {
+  const { data, error } = await supabase
+    .from('projects')
+    .update({ due_date: dueDate, updated_at: new Date().toISOString() })
+    .eq('id', projectId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function updateTaskDueDate(taskId: string, dueDate: string | null): Promise<Task> {
   const { data, error } = await supabase
     .from('tasks')

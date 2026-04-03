@@ -13,6 +13,7 @@ export interface Project {
   description: string | null
   column: Column
   position: number
+  due_date: string | null
   created_at: string
   updated_at: string
 }

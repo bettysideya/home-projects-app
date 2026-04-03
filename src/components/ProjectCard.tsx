@@ -6,7 +6,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { ChevronDown, ChevronRight, Trash2, Plus, CheckCircle2, Circle, GripVertical, Pencil, CalendarDays } from 'lucide-react'
 import { Project } from '@/lib/supabase'
-import { deleteProject, updateProject, fetchTasks, createTask, toggleTask, deleteTask, updateTaskDueDate } from '@/lib/queries'
+import { deleteProject, updateProject, updateProjectDueDate, fetchTasks, createTask, toggleTask, deleteTask, updateTaskDueDate } from '@/lib/queries'
 import { ResourceLinker } from './ResourceLinker'
 import { TaskResourceLinker } from './TaskResourceLinker'
 
@@ -72,6 +72,11 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
   const deleteTaskMutation = useMutation({
     mutationFn: (id: string) => deleteTask(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks', project.id] }),
+  })
+
+  const projectDueDateMutation = useMutation({
+    mutationFn: (dueDate: string | null) => updateProjectDueDate(project.id, dueDate),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
   })
 
   const dueDateMutation = useMutation({
@@ -181,6 +186,31 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
                 >
                   <Trash2 size={13} />
                 </button>
+                <div className="relative flex-shrink-0 min-w-[40px] h-[18px] flex items-center justify-end">
+                  <input
+                    type="date"
+                    value={project.due_date ?? ''}
+                    onChange={e => projectDueDateMutation.mutate(e.target.value || null)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    style={{ zIndex: 1 }}
+                  />
+                  {project.due_date ? (
+                    <span
+                      className="text-xs cursor-pointer select-none"
+                      style={{ color: '#8b8ca8', fontSize: '10px' }}
+                      title={project.due_date}
+                    >
+                      {(() => {
+                        const [, m, d] = project.due_date.split('-')
+                        return `${parseInt(m)}/${parseInt(d)}`
+                      })()}
+                    </span>
+                  ) : (
+                    <span className="cursor-pointer" style={{ color: '#4a4b6a' }}>
+                      <CalendarDays size={11} />
+                    </span>
+                  )}
+                </div>
               </div>
 
               {project.description && (
