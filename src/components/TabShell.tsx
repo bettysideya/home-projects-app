@@ -20,7 +20,7 @@ export function TabShell() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-white">Home Projects</h1>
-            <p className="text-xs" style={{ color: '#8b8ca8' }}>Drag &amp; drop your way to a finished home 🏠</p>
+
           </div>
         </div>
       </header>
