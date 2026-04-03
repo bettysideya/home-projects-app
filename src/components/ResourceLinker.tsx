@@ -61,7 +61,7 @@ export function ResourceLinker({ projectId, accentColor = '#4f46e5' }: Props) {
                 className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
                 style={{ background: `${accentColor}20`, color: accentColor, border: `1px solid ${accentColor}40` }}
               >
-                {res.name}
+                {res.company || res.name}
                 <button
                   onClick={e => { e.stopPropagation(); unlinkMutation.mutate(res.id) }}
                   className="opacity-60 hover:opacity-100 transition-opacity"

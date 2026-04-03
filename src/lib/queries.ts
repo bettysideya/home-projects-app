@@ -163,6 +163,7 @@ export async function linkResourceToProject(
   return data
 }
 
+// Task Resources (junction)
 export async function fetchTaskResources(taskId: string): Promise<TaskResource[]> {
   const { data, error } = await supabase
     .from('task_resources')
