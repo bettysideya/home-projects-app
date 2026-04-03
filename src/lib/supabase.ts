@@ -35,6 +35,14 @@ export interface ProjectResource {
   resource?: Resource
 }
 
+export interface TaskResource {
+  id: string
+  task_id: string
+  resource_id: string
+  created_at: string
+  resource?: Resource
+}
+
 export interface Task {
   id: string
   project_id: string

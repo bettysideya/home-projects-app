@@ -8,6 +8,7 @@ import { ChevronDown, ChevronRight, Trash2, Plus, CheckCircle2, Circle, GripVert
 import { Project } from '@/lib/supabase'
 import { deleteProject, updateProject, fetchTasks, createTask, toggleTask, deleteTask } from '@/lib/queries'
 import { ResourceLinker } from './ResourceLinker'
+import { TaskResourceLinker } from './TaskResourceLinker'
 
 interface Props {
   project: Project
@@ -227,6 +228,7 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
                   >
                     {task.title}
                   </span>
+                  <TaskResourceLinker taskId={task.id} accentColor={accentColor} />
                   <button
                     onClick={() => deleteTaskMutation.mutate(task.id)}
                     className="opacity-0 group-hover/task:opacity-100"

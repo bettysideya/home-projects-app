@@ -1,4 +1,4 @@
-import { supabase, Project, Task, Column, Resource, ProjectResource } from './supabase'
+import { supabase, Project, Task, Column, Resource, ProjectResource, TaskResource } from './supabase'
 
 // Projects
 export async function fetchProjects(): Promise<Project[]> {
@@ -161,6 +161,40 @@ export async function linkResourceToProject(
     .single()
   if (error) throw error
   return data
+}
+
+export async function fetchTaskResources(taskId: string): Promise<TaskResource[]> {
+  const { data, error } = await supabase
+    .from('task_resources')
+    .select('*, resource:resources(*)')
+    .eq('task_id', taskId)
+  if (error) throw error
+  return data ?? []
+}
+
+export async function linkResourceToTask(
+  taskId: string,
+  resourceId: string
+): Promise<TaskResource> {
+  const { data, error } = await supabase
+    .from('task_resources')
+    .insert({ task_id: taskId, resource_id: resourceId })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function unlinkResourceFromTask(
+  taskId: string,
+  resourceId: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('task_resources')
+    .delete()
+    .eq('task_id', taskId)
+    .eq('resource_id', resourceId)
+  if (error) throw error
 }
 
 export async function unlinkResourceFromProject(
