@@ -17,7 +17,7 @@ interface Props {
 
 export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
   const qc = useQueryClient()
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(true)
   const [editing, setEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(project.title)
   const [editDesc, setEditDesc] = useState(project.description ?? '')
