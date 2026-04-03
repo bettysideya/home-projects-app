@@ -235,7 +235,7 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
                     {task.title}
                   </span>
                   <TaskResourceLinker taskId={task.id} accentColor={accentColor} />
-                  <div className="relative flex-shrink-0">
+                  <div className="relative flex-shrink-0 min-w-[40px] h-[18px] flex items-center">
                     <input
                       type="date"
                       value={task.due_date ?? ''}
@@ -256,8 +256,8 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
                       </span>
                     ) : (
                       <span
-                        className="opacity-0 group-hover/task:opacity-100 transition-opacity cursor-pointer"
-                        style={{ color: '#3d3e5a' }}
+                        className="cursor-pointer"
+                        style={{ color: '#4a4b6a' }}
                       >
                         <CalendarDays size={11} />
                       </span>
