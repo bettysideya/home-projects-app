@@ -25,6 +25,7 @@ export interface Resource {
   mobile: string | null
   email: string | null
   notes: string | null
+  categories: string[]
   created_at: string
 }
 

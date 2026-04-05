@@ -2,9 +2,19 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, Pencil, X, Check } from 'lucide-react'
+import { Plus, Trash2, Pencil, X } from 'lucide-react'
 import { Resource } from '@/lib/supabase'
 import { fetchResources, createResource, updateResource, deleteResource } from '@/lib/queries'
+
+const PRESET_CATEGORIES = [
+  'woodwork',
+  'landscape',
+  'builder',
+  'stain',
+  'plumber',
+  'hvac',
+  'masonry',
+]
 
 const EMPTY: Omit<Resource, 'id' | 'created_at'> = {
   name: '',
@@ -12,6 +22,101 @@ const EMPTY: Omit<Resource, 'id' | 'created_at'> = {
   mobile: null,
   email: null,
   notes: null,
+  categories: [],
+}
+
+function CategoryPicker({
+  value,
+  onChange,
+}: {
+  value: string[]
+  onChange: (cats: string[]) => void
+}) {
+  const [customInput, setCustomInput] = useState('')
+
+  // All known categories = presets + any custom already added
+  const allCategories = Array.from(new Set([...PRESET_CATEGORIES, ...value]))
+
+  const toggle = (cat: string) => {
+    if (value.includes(cat)) {
+      onChange(value.filter(c => c !== cat))
+    } else {
+      onChange([...value, cat])
+    }
+  }
+
+  const addCustom = () => {
+    const trimmed = customInput.trim().toLowerCase()
+    if (!trimmed) return
+    if (!value.includes(trimmed)) {
+      onChange([...value, trimmed])
+    }
+    setCustomInput('')
+  }
+
+  return (
+    <div>
+      <label className="text-xs mb-2 block" style={{ color: '#8b8ca8' }}>
+        Categories
+      </label>
+      <div className="flex flex-wrap gap-2 mb-2">
+        {allCategories.map(cat => {
+          const selected = value.includes(cat)
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => toggle(cat)}
+              className="text-xs px-2.5 py-1 rounded-full font-medium capitalize transition-colors"
+              style={{
+                background: selected ? '#4f46e5' : '#2a2b48',
+                color: selected ? '#fff' : '#8b8ca8',
+                border: `1px solid ${selected ? '#4f46e5' : '#3d3e5a'}`,
+              }}
+            >
+              {cat}
+            </button>
+          )
+        })}
+      </div>
+      <div className="flex gap-2">
+        <input
+          value={customInput}
+          onChange={e => setCustomInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addCustom())}
+          className="text-xs rounded-lg px-3 py-1.5 outline-none flex-1"
+          style={{ background: '#252640', color: '#e2e3f0', border: '1px solid #3d3e5a' }}
+          placeholder="Add custom category…"
+        />
+        <button
+          type="button"
+          onClick={addCustom}
+          disabled={!customInput.trim()}
+          className="text-xs px-3 py-1.5 rounded-lg font-medium disabled:opacity-40"
+          style={{ background: '#2a2b48', color: '#8b8ca8', border: '1px solid #3d3e5a' }}
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function CategoryBadges({ categories }: { categories: string[] }) {
+  if (!categories || categories.length === 0) return <span style={{ color: '#4a4b68' }}>—</span>
+  return (
+    <div className="flex flex-wrap gap-1">
+      {categories.map(cat => (
+        <span
+          key={cat}
+          className="text-xs px-2 py-0.5 rounded-full capitalize"
+          style={{ background: '#2a2b48', color: '#7c7dab', border: '1px solid #3d3e5a' }}
+        >
+          {cat}
+        </span>
+      ))}
+    </div>
+  )
 }
 
 function ResourceForm({
@@ -88,6 +193,10 @@ function ResourceForm({
           placeholder="Notes, rates, specialties…"
         />
       </div>
+      <CategoryPicker
+        value={form.categories}
+        onChange={cats => setForm(prev => ({ ...prev, categories: cats }))}
+      />
       <div className="flex gap-2">
         <button
           onClick={() => form.name.trim() && onSave(form)}
@@ -197,7 +306,7 @@ export function ResourcesView() {
           <table className="w-full">
             <thead>
               <tr style={{ borderBottom: '1px solid #2d2e4a' }}>
-                {['Name', 'Company', 'Mobile', 'Email', ''].map(h => (
+                {['Name', 'Company', 'Categories', 'Mobile', 'Email', ''].map(h => (
                   <th
                     key={h}
                     className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider"
@@ -225,6 +334,9 @@ export function ResourcesView() {
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: '#8b8ca8' }}>
                       {r.company ?? '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <CategoryBadges categories={r.categories} />
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: '#8b8ca8' }}>
                       {r.mobile ? (
@@ -263,9 +375,9 @@ export function ResourcesView() {
                   </tr>
                   {editingId === r.id && (
                     <tr key={`edit-${r.id}`} style={{ borderBottom: i < resources.length - 1 ? '1px solid #2d2e4a' : 'none' }}>
-                      <td colSpan={5} className="px-4 py-3">
+                      <td colSpan={6} className="px-4 py-3">
                         <ResourceForm
-                          initial={{ name: r.name, company: r.company, mobile: r.mobile, email: r.email, notes: r.notes }}
+                          initial={{ name: r.name, company: r.company, mobile: r.mobile, email: r.email, notes: r.notes, categories: r.categories ?? [] }}
                           onSave={v => updateMutation.mutate({ id: r.id, updates: v })}
                           onCancel={() => setEditingId(null)}
                           saving={updateMutation.isPending}
