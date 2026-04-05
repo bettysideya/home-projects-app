@@ -33,9 +33,13 @@ function CategoryPicker({
   onChange: (cats: string[]) => void
 }) {
   const [customInput, setCustomInput] = useState('')
+  // Track extra categories added during this session
+  const [customAdded, setCustomAdded] = useState<string[]>(() =>
+    value.filter(v => !PRESET_CATEGORIES.includes(v))
+  )
 
-  // All known categories = presets + any custom already added
-  const allCategories = Array.from(new Set([...PRESET_CATEGORIES, ...value]))
+  // All available pills = presets + anything custom added
+  const allCategories = Array.from(new Set([...PRESET_CATEGORIES, ...customAdded]))
 
   const toggle = (cat: string) => {
     if (value.includes(cat)) {
@@ -48,6 +52,11 @@ function CategoryPicker({
   const addCustom = () => {
     const trimmed = customInput.trim().toLowerCase()
     if (!trimmed) return
+    // Add to available pills if not already there
+    if (!allCategories.includes(trimmed)) {
+      setCustomAdded(prev => [...prev, trimmed])
+    }
+    // Auto-select it
     if (!value.includes(trimmed)) {
       onChange([...value, trimmed])
     }
