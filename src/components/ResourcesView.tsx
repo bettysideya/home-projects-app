@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Trash2, Pencil, X } from 'lucide-react'
+import { Plus, Trash2, Pencil, X, MessageSquare, Mail } from 'lucide-react'
 import { Resource } from '@/lib/supabase'
 import { fetchResources, createResource, updateResource, deleteResource } from '@/lib/queries'
 
@@ -352,16 +352,34 @@ export function ResourcesView() {
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: '#8b8ca8' }}>
                       {r.mobile ? (
-                        <a href={`tel:${r.mobile}`} style={{ color: '#8b8ca8' }}>
-                          {r.mobile}
-                        </a>
+                        <span className="flex items-center gap-1.5">
+                          <a href={`tel:${r.mobile}`} style={{ color: '#8b8ca8' }}>{r.mobile}</a>
+                          <a
+                            href={`sms:${r.mobile}`}
+                            title="Send SMS"
+                            style={{ color: '#6b6c88' }}
+                            onMouseEnter={e => (e.currentTarget.style.color = '#22c55e')}
+                            onMouseLeave={e => (e.currentTarget.style.color = '#6b6c88')}
+                          >
+                            <MessageSquare size={13} />
+                          </a>
+                        </span>
                       ) : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm" style={{ color: '#8b8ca8' }}>
                       {r.email ? (
-                        <a href={`mailto:${r.email}`} style={{ color: '#4f46e5' }}>
-                          {r.email}
-                        </a>
+                        <span className="flex items-center gap-1.5">
+                          <a href={`mailto:${r.email}`} style={{ color: '#4f46e5' }}>{r.email}</a>
+                          <a
+                            href={`mailto:${r.email}`}
+                            title="Send Email"
+                            style={{ color: '#6b6c88' }}
+                            onMouseEnter={e => (e.currentTarget.style.color = '#4f46e5')}
+                            onMouseLeave={e => (e.currentTarget.style.color = '#6b6c88')}
+                          >
+                            <Mail size={13} />
+                          </a>
+                        </span>
                       ) : '—'}
                     </td>
                     <td className="px-4 py-3">
