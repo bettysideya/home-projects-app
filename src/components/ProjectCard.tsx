@@ -8,7 +8,7 @@ import { ChevronDown, ChevronRight, Trash2, Plus, CheckCircle2, Circle, GripVert
 import { Project } from '@/lib/supabase'
 import { deleteProject, updateProject, updateProjectDueDate, fetchTasks, createTask, toggleTask, deleteTask, updateTaskDueDate } from '@/lib/queries'
 import { ResourceLinker } from './ResourceLinker'
-import { TaskResourceLinker } from './TaskResourceLinker'
+import { TaskResourceLinker, TaskResourceChips } from './TaskResourceLinker'
 
 interface Props {
   project: Project
@@ -186,31 +186,33 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
                 >
                   <Trash2 size={13} />
                 </button>
-                <div className="relative flex-shrink-0 min-w-[40px] h-[18px] flex items-center justify-end">
-                  <input
-                    type="date"
-                    value={project.due_date ?? ''}
-                    onChange={e => projectDueDateMutation.mutate(e.target.value || null)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    style={{ zIndex: 1 }}
-                  />
-                  {project.due_date ? (
-                    <span
-                      className="text-xs cursor-pointer select-none"
-                      style={{ color: '#8b8ca8', fontSize: '10px' }}
-                      title={project.due_date}
-                    >
-                      {(() => {
-                        const [, m, d] = project.due_date.split('-')
-                        return `${parseInt(m)}/${parseInt(d)}`
-                      })()}
-                    </span>
-                  ) : (
-                    <span className="cursor-pointer" style={{ color: '#4a4b6a' }}>
-                      <CalendarDays size={11} />
-                    </span>
-                  )}
-                </div>
+                {project.column === 'active' && (
+                  <div className="relative flex-shrink-0 min-w-[40px] h-[18px] flex items-center justify-end">
+                    <input
+                      type="date"
+                      value={project.due_date ?? ''}
+                      onChange={e => projectDueDateMutation.mutate(e.target.value || null)}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      style={{ zIndex: 1 }}
+                    />
+                    {project.due_date ? (
+                      <span
+                        className="text-xs cursor-pointer select-none"
+                        style={{ color: '#8b8ca8', fontSize: '10px' }}
+                        title={project.due_date}
+                      >
+                        {(() => {
+                          const [, m, d] = project.due_date.split('-')
+                          return `${parseInt(m)}/${parseInt(d)}`
+                        })()}
+                      </span>
+                    ) : (
+                      <span className="cursor-pointer" style={{ color: '#4a4b6a' }}>
+                        <CalendarDays size={11} />
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {project.description && (
@@ -243,65 +245,69 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
           {expanded && !editing && (
             <div className="mt-3 ml-5 space-y-1">
               {tasks.map(task => (
-                <div key={task.id} className="flex items-center gap-2 group/task">
-                  <button
-                    onClick={() => toggleTaskMutation.mutate({ id: task.id, completed: !task.completed })}
-                    className="flex-shrink-0"
-                    style={{ color: task.completed ? accentColor : '#6b6c88' }}
-                  >
-                    {task.completed ? (
-                      <CheckCircle2 size={14} />
-                    ) : (
-                      <Circle size={14} />
+                <div key={task.id} className="group/task">
+                  {/* Task row */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toggleTaskMutation.mutate({ id: task.id, completed: !task.completed })}
+                      className="flex-shrink-0"
+                      style={{ color: task.completed ? accentColor : '#6b6c88' }}
+                    >
+                      {task.completed ? (
+                        <CheckCircle2 size={14} />
+                      ) : (
+                        <Circle size={14} />
+                      )}
+                    </button>
+                    <span
+                      className="text-xs flex-1"
+                      style={{
+                        color: task.completed ? '#4a4b6a' : '#c2c3d8',
+                        textDecoration: task.completed ? 'line-through' : 'none',
+                      }}
+                    >
+                      {task.title}
+                    </span>
+                    {project.column === 'active' && (
+                      <div className="relative flex-shrink-0 min-w-[40px] h-[18px] flex items-center">
+                        <input
+                          type="date"
+                          value={task.due_date ?? ''}
+                          onChange={e => dueDateMutation.mutate({ id: task.id, dueDate: e.target.value || null })}
+                          className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                          style={{ zIndex: 1 }}
+                        />
+                        {task.due_date ? (
+                          <span
+                            className="text-xs cursor-pointer select-none"
+                            style={{ color: '#8b8ca8', fontSize: '10px' }}
+                            title={task.due_date}
+                          >
+                            {(() => {
+                              const [, m, d] = task.due_date.split('-')
+                              return `${parseInt(m)}/${parseInt(d)}`
+                            })()}
+                          </span>
+                        ) : (
+                          <span className="cursor-pointer" style={{ color: '#4a4b6a' }}>
+                            <CalendarDays size={11} />
+                          </span>
+                        )}
+                      </div>
                     )}
-                  </button>
-                  <span
-                    className="text-xs flex-1"
-                    style={{
-                      color: task.completed ? '#4a4b6a' : '#c2c3d8',
-                      textDecoration: task.completed ? 'line-through' : 'none',
-                    }}
-                  >
-                    {task.title}
-                  </span>
-                  <TaskResourceLinker taskId={task.id} accentColor={accentColor} />
-                  <div className="relative flex-shrink-0 min-w-[40px] h-[18px] flex items-center">
-                    <input
-                      type="date"
-                      value={task.due_date ?? ''}
-                      onChange={e => dueDateMutation.mutate({ id: task.id, dueDate: e.target.value || null })}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      style={{ zIndex: 1 }}
-                    />
-                    {task.due_date ? (
-                      <span
-                        className="text-xs cursor-pointer select-none"
-                        style={{ color: '#8b8ca8', fontSize: '10px' }}
-                        title={task.due_date}
-                      >
-                        {(() => {
-                          const [, m, d] = task.due_date.split('-')
-                          return `${parseInt(m)}/${parseInt(d)}`
-                        })()}
-                      </span>
-                    ) : (
-                      <span
-                        className="cursor-pointer"
-                        style={{ color: '#4a4b6a' }}
-                      >
-                        <CalendarDays size={11} />
-                      </span>
-                    )}
+                    <TaskResourceLinker taskId={task.id} accentColor={accentColor} />
+                    <button
+                      onClick={() => deleteTaskMutation.mutate(task.id)}
+                      className="opacity-0 group-hover/task:opacity-100"
+                      style={{ color: '#3d3e5a' }}
+                      onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                      onMouseLeave={e => (e.currentTarget.style.color = '#3d3e5a')}
+                    >
+                      <Trash2 size={11} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => deleteTaskMutation.mutate(task.id)}
-                    className="opacity-0 group-hover/task:opacity-100"
-                    style={{ color: '#3d3e5a' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#3d3e5a')}
-                  >
-                    <Trash2 size={11} />
-                  </button>
+                  {/* Linked resource chips — below the task row */}
+                  <TaskResourceChips taskId={task.id} accentColor={accentColor} />
                 </div>
               ))}
 

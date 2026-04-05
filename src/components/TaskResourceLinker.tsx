@@ -49,27 +49,6 @@ export function TaskResourceLinker({ taskId, accentColor = '#4f46e5' }: Props) {
 
   return (
     <div className="relative inline-flex items-center gap-1" ref={ref}>
-      {/* Chips for linked resources */}
-      {linkedResources.map(lr => {
-        const res = allResources.find(r => r.id === lr.resource_id)
-        if (!res) return null
-        return (
-          <span
-            key={lr.id}
-            className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full"
-            style={{ background: `${accentColor}20`, color: accentColor, border: `1px solid ${accentColor}40` }}
-          >
-            {res.company || res.name}
-            <button
-              onClick={e => { e.stopPropagation(); unlinkMutation.mutate(res.id) }}
-              className="opacity-60 hover:opacity-100 transition-opacity"
-            >
-              <X size={9} />
-            </button>
-          </span>
-        )
-      })}
-
       {/* Link button — visible on task row hover */}
       <button
         onClick={e => { e.stopPropagation(); setOpen(!open) }}
@@ -129,6 +108,52 @@ export function TaskResourceLinker({ taskId, accentColor = '#4f46e5' }: Props) {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+// Chips shown below the task row
+export function TaskResourceChips({ taskId, accentColor = '#4f46e5' }: Props) {
+  const qc = useQueryClient()
+
+  const { data: allResources = [] } = useQuery({
+    queryKey: ['resources'],
+    queryFn: fetchResources,
+  })
+
+  const { data: linkedResources = [] } = useQuery({
+    queryKey: ['task-resources', taskId],
+    queryFn: () => fetchTaskResources(taskId),
+  })
+
+  const unlinkMutation = useMutation({
+    mutationFn: (resourceId: string) => unlinkResourceFromTask(taskId, resourceId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['task-resources', taskId] }),
+  })
+
+  if (linkedResources.length === 0) return null
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-0.5 ml-5">
+      {linkedResources.map(lr => {
+        const res = allResources.find(r => r.id === lr.resource_id)
+        if (!res) return null
+        return (
+          <span
+            key={lr.id}
+            className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full"
+            style={{ background: `${accentColor}20`, color: accentColor, border: `1px solid ${accentColor}40` }}
+          >
+            {res.company || res.name}
+            <button
+              onClick={e => { e.stopPropagation(); unlinkMutation.mutate(res.id) }}
+              className="opacity-60 hover:opacity-100 transition-opacity"
+            >
+              <X size={9} />
+            </button>
+          </span>
+        )
+      })}
     </div>
   )
 }
