@@ -28,18 +28,16 @@ const EMPTY: Omit<Resource, 'id' | 'created_at'> = {
 function CategoryPicker({
   value,
   onChange,
+  knownCategories = [],
 }: {
   value: string[]
   onChange: (cats: string[]) => void
+  knownCategories?: string[]
 }) {
   const [customInput, setCustomInput] = useState('')
-  // Track extra categories added during this session
-  const [customAdded, setCustomAdded] = useState<string[]>(() =>
-    value.filter(v => !PRESET_CATEGORIES.includes(v))
-  )
 
-  // All available pills = presets + anything custom added
-  const allCategories = Array.from(new Set([...PRESET_CATEGORIES, ...customAdded]))
+  // All available pills = presets + any custom saved across all resources
+  const allCategories = Array.from(new Set([...PRESET_CATEGORIES, ...knownCategories]))
 
   const toggle = (cat: string) => {
     if (value.includes(cat)) {
@@ -52,11 +50,7 @@ function CategoryPicker({
   const addCustom = () => {
     const trimmed = customInput.trim().toLowerCase()
     if (!trimmed) return
-    // Add to available pills if not already there
-    if (!allCategories.includes(trimmed)) {
-      setCustomAdded(prev => [...prev, trimmed])
-    }
-    // Auto-select it
+    // Auto-select it (it will appear as a pill once saved to a resource)
     if (!value.includes(trimmed)) {
       onChange([...value, trimmed])
     }
@@ -133,11 +127,13 @@ function ResourceForm({
   onSave,
   onCancel,
   saving,
+  knownCategories = [],
 }: {
   initial: Omit<Resource, 'id' | 'created_at'>
   onSave: (v: Omit<Resource, 'id' | 'created_at'>) => void
   onCancel: () => void
   saving: boolean
+  knownCategories?: string[]
 }) {
   const [form, setForm] = useState(initial)
   const set = (k: keyof typeof form, v: string) =>
@@ -205,6 +201,7 @@ function ResourceForm({
       <CategoryPicker
         value={form.categories}
         onChange={cats => setForm(prev => ({ ...prev, categories: cats }))}
+        knownCategories={knownCategories}
       />
       <div className="flex gap-2">
         <button
@@ -232,6 +229,11 @@ export function ResourcesView() {
     queryKey: ['resources'],
     queryFn: fetchResources,
   })
+
+  // All custom categories ever saved across any resource
+  const knownCategories = Array.from(
+    new Set(resources.flatMap(r => (r.categories ?? []).filter(c => !PRESET_CATEGORIES.includes(c))))
+  )
 
   const createMutation = useMutation({
     mutationFn: createResource,
@@ -290,6 +292,7 @@ export function ResourcesView() {
           onSave={v => createMutation.mutate(v)}
           onCancel={() => setAdding(false)}
           saving={createMutation.isPending}
+          knownCategories={knownCategories}
         />
       )}
 
@@ -390,6 +393,7 @@ export function ResourcesView() {
                           onSave={v => updateMutation.mutate({ id: r.id, updates: v })}
                           onCancel={() => setEditingId(null)}
                           saving={updateMutation.isPending}
+                          knownCategories={knownCategories}
                         />
                       </td>
                     </tr>
