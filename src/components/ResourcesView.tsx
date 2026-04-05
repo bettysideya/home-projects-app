@@ -9,7 +9,7 @@ import { fetchResources, createResource, updateResource, deleteResource } from '
 const PRESET_CATEGORIES = [
   'woodwork',
   'landscape',
-  'builder',
+  'construction',
   'stain',
   'plumber',
   'hvac',
