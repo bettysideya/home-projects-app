@@ -10,7 +10,7 @@ interface Props {
   accentColor?: string
 }
 
-export function ResourceLinker({ projectId, accentColor = '#4f46e5' }: Props) {
+export function ResourceLinkButton({ projectId, accentColor = '#4f46e5' }: Props) {
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -49,46 +49,20 @@ export function ResourceLinker({ projectId, accentColor = '#4f46e5' }: Props) {
 
   return (
     <div className="relative" ref={ref}>
-      {/* Chips for linked resources */}
-      {linkedResources.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-2 ml-5">
-          {linkedResources.map(lr => {
-            const res = allResources.find(r => r.id === lr.resource_id)
-            if (!res) return null
-            return (
-              <span
-                key={lr.id}
-                className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
-                style={{ background: `${accentColor}20`, color: accentColor, border: `1px solid ${accentColor}40` }}
-              >
-                {res.company || res.name}
-                <button
-                  onClick={e => { e.stopPropagation(); unlinkMutation.mutate(res.id) }}
-                  className="opacity-60 hover:opacity-100 transition-opacity"
-                >
-                  <X size={10} />
-                </button>
-              </span>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Link button */}
       <button
         onClick={e => { e.stopPropagation(); setOpen(!open) }}
-        className="mt-1 ml-5 flex items-center gap-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-        style={{ color: '#6b6c88' }}
+        className="opacity-0 group-hover:opacity-100 transition-opacity"
+        style={{ color: '#8b8ca8' }}
         onMouseEnter={e => (e.currentTarget.style.color = accentColor)}
-        onMouseLeave={e => (e.currentTarget.style.color = '#6b6c88')}
+        onMouseLeave={e => (e.currentTarget.style.color = '#8b8ca8')}
       >
-        <Link2 size={11} /> Link resource
+        <Link2 size={13} />
       </button>
 
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute left-5 z-50 mt-1 rounded-xl shadow-xl py-1 min-w-[180px]"
+          className="absolute right-0 z-50 mt-1 rounded-xl shadow-xl py-1 min-w-[180px]"
           style={{ background: '#1a1b2e', border: '1px solid #3d3e5a' }}
         >
           {allResources.length === 0 ? (
@@ -132,6 +106,51 @@ export function ResourceLinker({ projectId, accentColor = '#4f46e5' }: Props) {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+export function ResourceChips({ projectId, accentColor = '#4f46e5' }: Props) {
+  const qc = useQueryClient()
+
+  const { data: allResources = [] } = useQuery({
+    queryKey: ['resources'],
+    queryFn: fetchResources,
+  })
+
+  const { data: linkedResources = [] } = useQuery({
+    queryKey: ['project-resources', projectId],
+    queryFn: () => fetchProjectResources(projectId),
+  })
+
+  const unlinkMutation = useMutation({
+    mutationFn: (resourceId: string) => unlinkResourceFromProject(projectId, resourceId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['project-resources', projectId] }),
+  })
+
+  if (linkedResources.length === 0) return null
+
+  return (
+    <div className="flex flex-wrap gap-1 mt-2 ml-5">
+      {linkedResources.map(lr => {
+        const res = allResources.find(r => r.id === lr.resource_id)
+        if (!res) return null
+        return (
+          <span
+            key={lr.id}
+            className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full"
+            style={{ background: `${accentColor}20`, color: accentColor, border: `1px solid ${accentColor}40` }}
+          >
+            {res.company || res.name}
+            <button
+              onClick={e => { e.stopPropagation(); unlinkMutation.mutate(res.id) }}
+              className="opacity-60 hover:opacity-100 transition-opacity"
+            >
+              <X size={10} />
+            </button>
+          </span>
+        )
+      })}
     </div>
   )
 }

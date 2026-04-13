@@ -7,7 +7,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { ChevronDown, ChevronRight, Trash2, Plus, CheckCircle2, Circle, GripVertical, Pencil, CalendarDays } from 'lucide-react'
 import { Project } from '@/lib/supabase'
 import { deleteProject, updateProject, updateProjectDueDate, fetchTasks, createTask, toggleTask, deleteTask, updateTaskDueDate } from '@/lib/queries'
-import { ResourceLinker } from './ResourceLinker'
+import { ResourceLinkButton, ResourceChips } from './ResourceLinker'
 import { TaskResourceLinker, TaskResourceChips } from './TaskResourceLinker'
 
 interface Props {
@@ -168,6 +168,7 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
                 <h3 className="text-sm font-semibold truncate flex-1" style={{ color: '#e2e3f0' }}>
                   {project.title}
                 </h3>
+                <ResourceLinkButton projectId={project.id} accentColor={accentColor} />
                 <button
                   onClick={() => setEditing(true)}
                   className="opacity-0 group-hover:opacity-100 transition-opacity"
@@ -238,7 +239,7 @@ export function ProjectCard({ project, accentColor = '#4f46e5' }: Props) {
                 </div>
               )}
 
-              <ResourceLinker projectId={project.id} accentColor={accentColor} />
+              <ResourceChips projectId={project.id} accentColor={accentColor} />
             </>
           )}
 
