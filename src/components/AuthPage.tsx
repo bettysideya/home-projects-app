@@ -2,11 +2,16 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Lock } from 'lucide-react'
 
-type Mode = 'login' | 'reset'
+type Mode = 'login' | 'signup' | 'reset'
 
-export function AuthPage() {
+interface AuthPageProps {
+  allowSignup?: boolean
+  title?: string
+  subtitle?: string
+}
+
+export function AuthPage({ allowSignup = false, title = 'Home Projects', subtitle = 'bettyside.com' }: AuthPageProps) {
   const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -25,6 +30,10 @@ export function AuthPage() {
       if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) setError(error.message)
+      } else if (mode === 'signup') {
+        const { error } = await supabase.auth.signUp({ email, password })
+        if (error) setError(error.message)
+        else setSuccess('Account created! Check your email to confirm.')
       } else if (mode === 'reset') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/`,
@@ -38,36 +47,35 @@ export function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#1a1b2e' }}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#0f1117' }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(79,70,229,0.15)' }}>
-            <Lock className="w-7 h-7" style={{ color: '#818cf8' }} />
-          </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Home Projects</h1>
-          <p className="text-sm mt-2" style={{ color: '#6b6c88' }}>Sign in to continue</p>
+          <h1 className="text-3xl font-bold text-white tracking-tight">{title}</h1>
+          <p className="text-gray-500 text-sm mt-2">{subtitle}</p>
         </div>
 
         <div className="rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <h2 className="text-white font-semibold text-lg mb-5">
+            {mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Reset password'}
+          </h2>
+
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="text-xs mb-1.5 block" style={{ color: '#6b6c88' }}>Email</label>
+              <label className="text-xs text-gray-500 mb-1.5 block">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full px-3 py-2.5 text-sm rounded-xl border text-white placeholder-gray-600 focus:outline-none transition-colors"
-                style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }}
-                onFocus={e => e.target.style.borderColor = 'rgba(79,70,229,0.5)'}
-                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                className="w-full px-3 py-2.5 text-sm rounded-xl border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/50 transition-colors"
+                style={{ background: 'rgba(255,255,255,0.05)' }}
               />
             </div>
 
-            {mode === 'login' && (
+            {mode !== 'reset' && (
               <div>
-                <label className="text-xs mb-1.5 block" style={{ color: '#6b6c88' }}>Password</label>
+                <label className="text-xs text-gray-500 mb-1.5 block">Password</label>
                 <input
                   type="password"
                   value={password}
@@ -75,10 +83,8 @@ export function AuthPage() {
                   required
                   placeholder="••••••••"
                   minLength={6}
-                  className="w-full px-3 py-2.5 text-sm rounded-xl border text-white placeholder-gray-600 focus:outline-none transition-colors"
-                  style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)' }}
-                  onFocus={e => e.target.style.borderColor = 'rgba(79,70,229,0.5)'}
-                  onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
+                  className="w-full px-3 py-2.5 text-sm rounded-xl border border-white/10 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/50 transition-colors"
+                  style={{ background: 'rgba(255,255,255,0.05)' }}
                 />
               </div>
             )}
@@ -101,28 +107,41 @@ export function AuthPage() {
               className="w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-150 disabled:opacity-50"
               style={{ background: '#4f46e5' }}
             >
-              {loading ? '...' : mode === 'login' ? 'Sign in' : 'Send reset link'}
+              {loading ? '...' : mode === 'login' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Send reset link'}
             </button>
           </form>
 
-          <div className="mt-4 text-center">
-            {mode === 'login' ? (
-              <button
-                onClick={() => { setMode('reset'); reset() }}
-                className="text-xs transition-colors"
-                style={{ color: '#6b6c88' }}
-                onMouseEnter={e => e.currentTarget.style.color = '#a2a3be'}
-                onMouseLeave={e => e.currentTarget.style.color = '#6b6c88'}
-              >
-                Forgot password?
-              </button>
-            ) : (
+          <div className="mt-4 flex flex-col gap-2 text-center">
+            {mode === 'login' && (
+              <>
+                {allowSignup && (
+                  <button
+                    onClick={() => { setMode('signup'); reset() }}
+                    className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    Don't have an account? Sign up
+                  </button>
+                )}
+                <button
+                  onClick={() => { setMode('reset'); reset() }}
+                  className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+                >
+                  Forgot password?
+                </button>
+              </>
+            )}
+            {mode === 'signup' && (
               <button
                 onClick={() => { setMode('login'); reset() }}
-                className="text-xs transition-colors"
-                style={{ color: '#6b6c88' }}
-                onMouseEnter={e => e.currentTarget.style.color = '#a2a3be'}
-                onMouseLeave={e => e.currentTarget.style.color = '#6b6c88'}
+                className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                Already have an account? Sign in
+              </button>
+            )}
+            {mode === 'reset' && (
+              <button
+                onClick={() => { setMode('login'); reset() }}
+                className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
               >
                 ← Back to sign in
               </button>
